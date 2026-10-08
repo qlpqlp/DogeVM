@@ -1,0 +1,500 @@
+<!--
+Copyright (c) 2026 Paulo Vidal (https://x.com/inevitable360, https://github.com/qlpqlp)
+
+SPDX-License-Identifier: MIT
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DogeVM Connect</title>
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+  <link rel="stylesheet" href="/app.css" />
+  <script>
+    if (localStorage.getItem("dogevm_terms_accepted") === "1") {
+      document.documentElement.classList.add("gate-skip");
+    }
+  </script>
+</head>
+<body>
+  <div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    <div class="gate-card">
+      <img class="gate-logo" src="/logo.png" width="84" height="84" alt="DogeVM Connect" onerror="this.onerror=null;this.src='/favicon.svg'" />
+      <h1 id="gate-title">DogeVM Connect</h1>
+      <p class="gate-copy">DogecoinVM and its bridge are alpha software with caps. Alpha means real risk in this stage, so be careful using real Dogecoin. Read the <a href="https://metaldoge.com/terms" target="_blank" rel="noopener">terms</a> before moving real DOGE. Speed gauges share one scale versus a ~60 s Dogecoin header (~200 ms VM ≈ 300×).</p>
+      <label class="switch" for="gate-accept">
+        <input id="gate-accept" type="checkbox" />
+        <span>I understand the alpha risk and I have read the terms</span>
+      </label>
+      <button type="button" class="btn primary gate-enter" id="gate-enter" disabled>
+        <span class="material-symbols-outlined">login</span> Enter
+      </button>
+    </div>
+  </div>
+
+  <div class="split-sky" aria-hidden="true">
+    <div class="sky-night"></div>
+    <div class="sky-day"></div>
+    <div class="bridge-seam">
+      <span class="material-symbols-outlined">swap_horiz</span>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand side-brand">
+        <img class="mark" src="/logo.png" width="44" height="44" alt="DogeVM Connect" onerror="this.onerror=null;this.src='/favicon.svg'" />
+        <div>
+          <p class="brand-name">DogeVM <span>Connect</span></p>
+          <p class="brand-sub">L1 and DogecoinVM</p>
+        </div>
+      </div>
+      <nav class="side-nav" id="tabs" aria-label="Sections">
+        <button type="button" data-tab="home" class="active"><span class="material-symbols-outlined">home</span>Home</button>
+        <button type="button" data-tab="wallet"><span class="material-symbols-outlined">account_balance_wallet</span>Wallet</button>
+        <button type="button" data-tab="activity"><span class="material-symbols-outlined">receipt_long</span>Activity</button>
+        <button type="button" data-tab="settings"><span class="material-symbols-outlined">tune</span>Settings</button>
+        <button type="button" data-tab="docs"><span class="material-symbols-outlined">api</span>API docs</button>
+        <button type="button" data-tab="learn"><span class="material-symbols-outlined">school</span>Learn</button>
+      </nav>
+      <p class="side-foot">Alpha software. Keys stay on this computer.</p>
+    </aside>
+    <div class="side-backdrop" id="side-backdrop"></div>
+
+    <div class="app-body">
+      <header class="top">
+        <button type="button" class="btn ghost nav-toggle" id="nav-toggle" aria-label="Open menu">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <p class="top-title" id="top-title">Home</p>
+      </header>
+
+  <main>
+    <div id="auth-banner" class="auth-banner" hidden>
+      <p>This server expects a token. Paste the admin token to use the full interface.</p>
+      <form id="auth-banner-form" class="form inline">
+        <label>Admin token
+          <input name="token" type="password" autocomplete="off" placeholder="Admin token" />
+        </label>
+        <button class="btn primary" type="submit"><span class="material-symbols-outlined">key</span> Use token</button>
+      </form>
+    </div>
+    <section id="tab-home" class="panel active">
+      <div class="hero-bridge">
+        <div class="surface night">
+          <p class="eyebrow"><span class="material-symbols-outlined">dark_mode</span> Night · DogecoinVM</p>
+          <h1>DogeVM Connect</h1>
+          <p>Fast finality on Metal. One key, one address - move DOGE to the night side, spend in seconds, bridge back to day whenever you want.</p>
+          <div class="cta-row">
+            <button type="button" class="btn primary" data-go="wallet">
+              <span class="material-symbols-outlined">account_balance_wallet</span> Open wallet
+            </button>
+          </div>
+        </div>
+        <div class="surface day">
+          <p class="eyebrow"><span class="material-symbols-outlined">light_mode</span> Day · Dogecoin</p>
+          <h2>Mainnet side</h2>
+          <p>Classic Dogecoin headers about every minute. Same <code>D…</code> address - different coins until you bridge.</p>
+          <div class="cta-row">
+            <button type="button" class="btn ghost" data-go="learn">
+              <span class="material-symbols-outlined">school</span> Learn more
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="speed-duo">
+        <article class="surface night speed-card">
+          <header>
+            <span class="material-symbols-outlined">speed</span>
+            <div>
+              <h2>DogecoinVM</h2>
+              <p>How fast payments finalize</p>
+            </div>
+            <strong class="mult" id="vm-mult">-</strong>
+          </header>
+          <canvas id="speedo-vm" width="300" height="200" role="img" aria-label="DogecoinVM speedometer"></canvas>
+          <div class="speed-stats">
+            <div><span>Takes</span><strong id="vm-median">-</strong></div>
+            <div><span>Latest</span><strong id="vm-latest">-</strong></div>
+            <div><span>p90</span><strong id="vm-p90">-</strong></div>
+          </div>
+          <p class="hint" id="vm-hint">Faster = less time. ~200 ms ≈ 300× Dogecoin.</p>
+          <canvas id="spark-vm" width="300" height="56" aria-hidden="true"></canvas>
+        </article>
+
+        <article class="surface day speed-card">
+          <header>
+            <span class="material-symbols-outlined">timeline</span>
+            <div>
+              <h2>Dogecoin mainnet</h2>
+              <p>Time between new headers</p>
+            </div>
+            <strong class="mult" id="doge-mult">-</strong>
+          </header>
+          <canvas id="speedo-doge" width="300" height="200" role="img" aria-label="Dogecoin header speedometer"></canvas>
+          <div class="speed-stats">
+            <div><span>Takes</span><strong id="doge-median">-</strong></div>
+            <div><span>Latest</span><strong id="doge-latest">-</strong></div>
+            <div><span>Height</span><strong id="doge-height">-</strong></div>
+          </div>
+          <p class="hint" id="doge-hint">~60 s headers sit low on the same scale as VM.</p>
+          <canvas id="spark-doge" width="300" height="56" aria-hidden="true"></canvas>
+        </article>
+      </div>
+
+      <div class="grid-2">
+        <article class="surface night">
+          <h3><span class="material-symbols-outlined">lan</span> Network</h3>
+          <dl id="net-stats">
+            <div><dt>DogecoinVM height</dt><dd>-</dd></div>
+            <div><dt>Dogecoin height</dt><dd>-</dd></div>
+            <div><dt>Peg solvent</dt><dd>-</dd></div>
+            <div><dt>Locked / circulating</dt><dd>-</dd></div>
+          </dl>
+        </article>
+        <article class="surface day">
+          <h3><span class="material-symbols-outlined">sensors</span> Live tips</h3>
+          <ul class="tip-list" id="tip-list">
+            <li>Waiting for chain tip events…</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="tab-wallet" class="panel">
+      <div id="wallet-wizard" class="wizard"></div>
+    </section>
+
+    <section id="tab-activity" class="panel">
+      <div class="activity-split">
+        <article class="surface night">
+          <div class="section-head">
+            <h2><span class="material-symbols-outlined">receipt_long</span> Your transactions</h2>
+            <button type="button" class="btn ghost" id="btn-refresh-tx"><span class="material-symbols-outlined">refresh</span> Refresh</button>
+          </div>
+          <p class="hint">History for your unlocked address on both chains.</p>
+          <div id="tx-table" class="table-wrap"></div>
+          <form id="import-form" class="form inline">
+            <label>Import older Dogecoin payment by txid
+              <input name="txid" placeholder="txid" />
+            </label>
+            <button type="submit" class="btn ghost"><span class="material-symbols-outlined">download</span> Import</button>
+          </form>
+        </article>
+        <article class="surface day">
+          <div class="section-head">
+            <h2><span class="material-symbols-outlined">hub</span> Bridge feed</h2>
+            <button type="button" class="btn ghost" id="btn-refresh-bridge"><span class="material-symbols-outlined">refresh</span> Refresh</button>
+          </div>
+          <p class="hint">Recent peg activity across the whole bridge.</p>
+          <div id="bridge-table" class="table-wrap"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="panel">
+      <div class="grid-2">
+        <article class="surface day">
+          <h2><span class="material-symbols-outlined">admin_panel_settings</span> API tokens</h2>
+          <p class="hint">Leave both empty for open access on this computer. Set an admin token to lock the interface and key export. A user token can generate a wallet, unlock it, send, and bridge, and cannot export the key or change these tokens.</p>
+          <p class="hint" id="settings-status"></p>
+          <form id="settings-form" class="form">
+            <label>User token
+              <input id="set-user" name="user_token" type="password" autocomplete="off" placeholder="at least 8 characters, or empty" />
+            </label>
+            <label>Admin token
+              <input id="set-admin" name="admin_token" type="password" autocomplete="off" placeholder="at least 8 characters, or empty" />
+            </label>
+            <button type="submit" class="btn primary"><span class="material-symbols-outlined">save</span> Save tokens</button>
+          </form>
+        </article>
+        <article class="surface night">
+          <h2><span class="material-symbols-outlined">key</span> This browser</h2>
+          <p class="hint">The page sends this value as <code>Authorization: Bearer</code>. Saving an admin token above stores it here too. A new browser needs the admin token pasted again.</p>
+          <form id="browser-token-form" class="form">
+            <label>Browser token
+              <input id="set-browser" type="password" autocomplete="off" placeholder="Admin token for this browser" />
+            </label>
+            <button type="submit" class="btn primary"><span class="material-symbols-outlined">login</span> Use in this browser</button>
+          </form>
+          <p class="hint">Config file: <code>connect_config.json</code> in the wallet data folder. Env <code>DOGEVM_USER_TOKEN</code> and <code>DOGEVM_ADMIN_TOKEN</code> override the file on startup.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="tab-docs" class="panel">
+      <article class="surface day docs">
+        <h2><span class="material-symbols-outlined">api</span> HTTP API</h2>
+        <p class="hint">Base URL for this app: <code id="doc-base">http://127.0.0.1:8787</code>. Send <code>Authorization: Bearer TOKEN</code> or <code>X-Token: TOKEN</code> when tokens are on. You can also prefix the path: <code>/ADMIN_OR_USER_TOKEN/api/...</code>. Drop the header when both tokens are empty. Add <code>"preview": true</code> to any send or bridge call to see fees without broadcasting.</p>
+        <p class="hint">User token: create, unlock, balances, send on either chain, bridge both ways, confirmations. Admin token: those, plus export, delete wallet, and token settings. The same key is a <code>D...</code> address on Dogecoin L1 and on DogecoinVM. Balances are separate.</p>
+      </article>
+
+      <article class="surface night docs">
+        <h3>1. Generate a wallet</h3>
+        <p class="hint">Creates a new key, encrypts it with the passphrase, and unlocks it. Fails if a wallet file already exists.</p>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>curl -s -X POST http://127.0.0.1:8787/api/wallet/create \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"passphrase\":\"choose a long passphrase\"}"</pre>
+        </div>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>const created = await fetch("http://127.0.0.1:8787/api/wallet/create", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer YOUR_TOKEN",
+  },
+  body: JSON.stringify({ passphrase: "choose a long passphrase" }),
+}).then((r) => r.json());
+console.log(created.address);</pre>
+        </div>
+      </article>
+
+      <article class="surface day docs">
+        <h3>2. Unlock a wallet</h3>
+        <p class="hint">Needed after a restart before send or bridge. Balance and confirmation reads work from the address on disk even while locked.</p>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>curl -s -X POST http://127.0.0.1:8787/api/wallet/unlock \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"passphrase\":\"choose a long passphrase\"}"</pre>
+        </div>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>await fetch("http://127.0.0.1:8787/api/wallet/unlock", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer YOUR_TOKEN",
+  },
+  body: JSON.stringify({ passphrase: "choose a long passphrase" }),
+});</pre>
+        </div>
+      </article>
+
+      <article class="surface night docs">
+        <h3>3. Balances on both chains</h3>
+        <p class="hint"><code>spendable</code> is confirmed UTXOs (at least 1 confirmation) in DOGE. <code>data.confirmed</code> and <code>data.pending</code> come from the DogecoinVM index.</p>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>curl -s http://127.0.0.1:8787/api/balances \
+  -H "Authorization: Bearer YOUR_TOKEN"</pre>
+        </div>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>const bal = await fetch("http://127.0.0.1:8787/api/balances", {
+  headers: { Authorization: "Bearer YOUR_TOKEN" },
+}).then((r) => r.json());
+console.log(bal.chains.dogecoin.spendable, bal.chains.dogecoinvm.spendable);</pre>
+        </div>
+      </article>
+
+      <article class="surface day docs">
+        <h3>4. Send Dogecoin L1 to another L1 wallet</h3>
+        <p class="hint"><code>chain</code> is <code>dogecoin</code>. This does not bridge.</p>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>curl -s -X POST http://127.0.0.1:8787/api/send \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"chain\":\"dogecoin\",\"to\":\"Dxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"amount\":\"1.5\"}"</pre>
+        </div>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>const sentL1 = await fetch("http://127.0.0.1:8787/api/send", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer YOUR_TOKEN",
+  },
+  body: JSON.stringify({
+    chain: "dogecoin",
+    to: "Dxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    amount: "1.5",
+  }),
+}).then((r) => r.json());
+console.log(sentL1.txid, sentL1.confirm);</pre>
+        </div>
+      </article>
+
+      <article class="surface night docs">
+        <h3>5. Send DogecoinVM to another DogecoinVM wallet</h3>
+        <p class="hint"><code>chain</code> is <code>dogecoinvm</code>. Same address shape, different UTXO set.</p>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>curl -s -X POST http://127.0.0.1:8787/api/send \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"chain\":\"dogecoinvm\",\"to\":\"Dyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\",\"amount\":\"1.5\"}"</pre>
+        </div>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>const sentVM = await fetch("http://127.0.0.1:8787/api/send", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer YOUR_TOKEN",
+  },
+  body: JSON.stringify({
+    chain: "dogecoinvm",
+    to: "Dyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    amount: "1.5",
+  }),
+}).then((r) => r.json());
+console.log(sentVM.txid);</pre>
+        </div>
+      </article>
+
+      <article class="surface day docs">
+        <h3>6. Bridge Dogecoin L1 into DogecoinVM</h3>
+        <p class="hint">Builds a Dogecoin payment to your verified deposit address. Credit lands on this same address on DogecoinVM, minus the bridge fee, after Dogecoin confirmations.</p>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>curl -s -X POST http://127.0.0.1:8787/api/bridge/deposit \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"amount\":\"10\"}"</pre>
+        </div>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>const deposit = await fetch("http://127.0.0.1:8787/api/bridge/deposit", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer YOUR_TOKEN",
+  },
+  body: JSON.stringify({ amount: "10" }),
+}).then((r) => r.json());
+console.log(deposit.txid, deposit.depositAddress);</pre>
+        </div>
+      </article>
+
+      <article class="surface night docs">
+        <h3>7. Bridge DogecoinVM back to Dogecoin L1</h3>
+        <p class="hint"><code>to</code> is the Dogecoin address that should receive the payout. It can be this wallet or any other L1 address.</p>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>curl -s -X POST http://127.0.0.1:8787/api/bridge/withdraw \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"to\":\"Dzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\",\"amount\":\"5\"}"</pre>
+        </div>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>const withdraw = await fetch("http://127.0.0.1:8787/api/bridge/withdraw", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer YOUR_TOKEN",
+  },
+  body: JSON.stringify({
+    to: "Dzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    amount: "5",
+  }),
+}).then((r) => r.json());
+console.log(withdraw.txid, withdraw.confirm);</pre>
+        </div>
+      </article>
+
+      <article class="surface day docs">
+        <h3>8. Confirmations and available balance</h3>
+        <p class="hint"><code>confirmed</code> means the transaction has enough confirmations for that flow. <code>available</code> means funds are ready: spendable balance on that chain after a same-chain send, DogecoinVM credit after a deposit, or a Dogecoin payout with at least 1 confirmation after a withdraw. <code>balance.spendable</code> is always this wallet.</p>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>curl -s "http://127.0.0.1:8787/api/confirm?flow=send&amp;chain=dogecoin&amp;txid=TXID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+curl -s "http://127.0.0.1:8787/api/confirm?flow=send&amp;chain=dogecoinvm&amp;txid=TXID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+curl -s "http://127.0.0.1:8787/api/confirm?flow=deposit&amp;txid=L1_TXID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+curl -s "http://127.0.0.1:8787/api/confirm?flow=withdraw&amp;txid=VM_TXID" \
+  -H "Authorization: Bearer YOUR_TOKEN"</pre>
+        </div>
+        <div class="code-block" data-base>
+          <button type="button" class="btn ghost btn-copy" data-copy>Copy</button>
+          <pre>async function waitReady(params) {
+  const headers = { Authorization: "Bearer YOUR_TOKEN" };
+  for (let i = 0; i &lt; 120; i++) {
+    const q = new URLSearchParams(params);
+    const data = await fetch("http://127.0.0.1:8787/api/confirm?" + q, { headers })
+      .then((r) => r.json());
+    if (data.confirmed && data.available) return data;
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  throw new Error("timed out waiting for confirmation");
+}
+
+await waitReady({ flow: "send", chain: "dogecoin", txid: sentL1.txid });
+await waitReady({ flow: "send", chain: "dogecoinvm", txid: sentVM.txid });
+await waitReady({ flow: "deposit", txid: deposit.txid });
+await waitReady({ flow: "withdraw", txid: withdraw.txid });</pre>
+        </div>
+      </article>
+    </section>
+
+    <section id="tab-learn" class="panel">
+      <div class="learn-split">
+        <article class="surface night">
+          <p class="eyebrow"><span class="material-symbols-outlined">dark_mode</span> Night side</p>
+          <h2>DogecoinVM on Metal</h2>
+          <ul class="learn-list">
+            <li><strong>Fast finality.</strong> Payments settle in roughly a fifth of a second.</li>
+            <li><strong>Same address.</strong> Your <code>D…</code> key works here - balances are separate from mainnet.</li>
+            <li><strong>Withdraw home.</strong> Bridge out with a tagged payment to the reserve (<code>DVMO</code>).</li>
+          </ul>
+        </article>
+        <article class="surface day">
+          <p class="eyebrow"><span class="material-symbols-outlined">light_mode</span> Day side</p>
+          <h2>Dogecoin mainnet</h2>
+          <ul class="learn-list">
+            <li><strong>Header cadence.</strong> New blocks about once a minute - the slow gauge on Home.</li>
+            <li><strong>Deposit to bridge.</strong> Only your personal deposit address moves DOGE onto DogecoinVM.</li>
+            <li><strong>Keys stay local.</strong> DogeVM Connect signs on this machine; keys never go to the API.</li>
+          </ul>
+        </article>
+      </div>
+      <article class="surface day learn-note">
+        <h3><span class="material-symbols-outlined">info</span> Good to know</h3>
+        <p>DogecoinVM and its bridge are alpha software with caps. Read the <a href="https://metaldoge.com/terms" target="_blank" rel="noopener">terms</a> before moving real DOGE. Speed gauges share one scale versus a ~60 s Dogecoin header (~200 ms VM ≈ 300×).</p>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      <strong>DogeVM Connect</strong> · day / night bridge for
+      <a href="https://metaldoge.com/" target="_blank" rel="noopener">DogecoinVM</a>
+      · keys encrypted on this computer
+    </p>
+  </footer>
+    </div>
+  </div>
+
+  <div id="modal-root" class="modal-root" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-icon" id="modal-icon"><span class="material-symbols-outlined">info</span></div>
+      <h3 id="modal-title">Notice</h3>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+
+  <script src="/qrcode.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

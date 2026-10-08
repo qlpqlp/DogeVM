@@ -1,0 +1,172 @@
+# Copyright (c) 2026 Paulo Vidal (https://x.com/inevitable360, https://github.com/qlpqlp)
+#
+# SPDX-License-Identifier: MIT
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without the v prefix, such as 1.2.3. Empty uses the next patch."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Choose version and tag
+        id: tag
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            version="${GITHUB_REF#refs/tags/v}"
+            echo "version=${version}" >> "$GITHUB_OUTPUT"
+            echo "Using pushed tag v${version}"
+            exit 0
+          fi
+
+          input="${{ inputs.version }}"
+          input="${input#v}"
+          if [[ -n "${input}" ]]; then
+            if ! [[ "${input}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "version must look like 1.2.3" >&2
+              exit 1
+            fi
+            version="${input}"
+          else
+            on_head="$(git tag --points-at HEAD 'v[0-9]*.[0-9]*.[0-9]*' | head -n1 || true)"
+            if [[ -n "${on_head}" ]]; then
+              version="${on_head#v}"
+            else
+              latest="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1 || true)"
+              if [[ -z "${latest}" ]]; then
+                version="1.0.0"
+              else
+                ver="${latest#v}"
+                IFS=. read -r major minor patch <<< "${ver}"
+                patch=$((10#${patch} + 1))
+                version="${major}.${minor}.${patch}"
+              fi
+            fi
+          fi
+
+          tag="v${version}"
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} already exists"
+          else
+            git tag -a "${tag}" -m "Release ${tag}"
+            git push origin "${tag}"
+            echo "Created ${tag}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+          - goos: windows
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.version.outputs.version }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Compile
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          ext=""
+          if [ "${GOOS}" = "windows" ]; then
+            ext=".exe"
+          fi
+          mkdir -p dist
+          name="dogevm-connect-v${VERSION}-${GOOS}-${GOARCH}${ext}"
+          go build -trimpath \
+            -ldflags "-s -w -X main.releaseVersion=v${VERSION}" \
+            -o "dist/${name}" \
+            ./cmd/dogevm-connect
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dogevm-connect-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/dogevm-connect-*
+          if-no-files-found: error
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: dogevm-connect-*
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          cd dist
+          sha256sum dogevm-connect-* > SHA256SUMS
+          {
+            echo "DogeVM Connect ${tag}"
+            echo
+            echo "Binaries have the web UI embedded. SHA256SUMS lists every file."
+            echo
+            echo "- Windows amd64 and arm64 (.exe)"
+            echo "- macOS amd64 and arm64"
+            echo "- Linux amd64 and arm64"
+          } > NOTES.md
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            gh release upload "${tag}" dogevm-connect-* SHA256SUMS --clobber
+          else
+            gh release create "${tag}" dogevm-connect-* SHA256SUMS \
+              --title "DogeVM Connect ${tag}" \
+              --notes-file NOTES.md
+          fi

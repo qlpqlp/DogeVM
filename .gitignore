@@ -1,0 +1,10 @@
+/dist/
+*.exe
+*.test
+*.out
+.DS_Store
+.idea/
+.vscode/
+dogevm-desk-data/
+dogevm-connect-data/
+*.tmp

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DogeVM">
+  <rect width="64" height="64" rx="8" fill="#c2a633"/>
+  <rect x="3" y="3" width="58" height="58" rx="6" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+  <text x="32" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="42" font-weight="700" fill="#1a1a1a">Ð</text>
+</svg>
