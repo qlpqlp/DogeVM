@@ -34,6 +34,9 @@ jobs:
 
       - name: Choose version and tag
         id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -62,6 +65,9 @@ jobs:
               latest="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1 || true)"
               if [[ -z "${latest}" ]]; then
                 version="1.0.0"
+              elif ! gh release view "${latest}" >/dev/null 2>&1; then
+                version="${latest#v}"
+                echo "Tag ${latest} has no GitHub release yet. Publishing that version."
               else
                 ver="${latest#v}"
                 IFS=. read -r major minor patch <<< "${ver}"
@@ -148,11 +154,15 @@ jobs:
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           set -euo pipefail
           tag="v${VERSION}"
-          cd dist
+          mkdir -p release
+          find dist -type f -name 'dogevm-connect-*' -exec cp -t release {} +
+          ls -l release
+          cd release
           sha256sum dogevm-connect-* > SHA256SUMS
           {
             echo "DogeVM Connect ${tag}"
